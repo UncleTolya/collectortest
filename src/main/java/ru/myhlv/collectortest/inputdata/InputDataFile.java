@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import java.nio.file.Path;
 
 @Component
-public class InputDataFile implements InputData {
+public class InputDataFile {
 
     private final Path inputData;
 
@@ -18,7 +18,6 @@ public class InputDataFile implements InputData {
         this.inputData = inputData;
     }
 
-    @Override
     public Path getData() {
         return inputData;
     }
