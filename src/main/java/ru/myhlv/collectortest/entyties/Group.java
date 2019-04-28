@@ -1,11 +1,12 @@
 package ru.myhlv.collectortest.entyties;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 
 import java.util.ArrayList;
-
+import java.util.Objects;
 
 @RequiredArgsConstructor(staticName = "of")
 public class Group implements Comparable<Group> {
@@ -21,6 +22,16 @@ public class Group implements Comparable<Group> {
         return sb.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        return this == o;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(alikeStrings);
+    }
 
     @Override
     public int compareTo(Group o) {

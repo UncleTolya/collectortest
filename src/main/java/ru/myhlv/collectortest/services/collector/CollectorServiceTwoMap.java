@@ -3,19 +3,16 @@ package ru.myhlv.collectortest.services.collector;
 import lombok.NonNull;
 import lombok.val;
 import org.springframework.stereotype.Service;
-import ru.myhlv.collectortest.brokers.CollectorResultTwoMap;
+import ru.myhlv.collectortest.brokers.CollectorResultMap;
 import ru.myhlv.collectortest.converters.InputStringConverter;
 import ru.myhlv.collectortest.entyties.Group;
 import ru.myhlv.collectortest.entyties.InputString;
-import ru.myhlv.collectortest.inputdata.InputDataFile;
+import ru.myhlv.collectortest.io.InputDataFile;
+import ru.myhlv.collectortest.utils.ConsoleUtils;
 import ru.myhlv.collectortest.utils.FileUtils;
-import ru.myhlv.collectortest.utils.Informer;
+import ru.myhlv.collectortest.services.CollectorInformer;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
+import java.io.*;
 import java.util.*;
 
 
@@ -24,15 +21,15 @@ public class CollectorServiceTwoMap implements CollectorService {
 
     private final Map<String, Group> tempMap = new HashMap<>();
 
-    private final CollectorResultTwoMap resultMap;
+    private final CollectorResultMap resultMap;
     private final InputDataFile inputData;
     private final InputStringConverter converter;
-    private final Informer informer;
+    private final CollectorInformer informer;
 
-    public CollectorServiceTwoMap(@NonNull final CollectorResultTwoMap resultMap,
+    public CollectorServiceTwoMap(@NonNull final CollectorResultMap resultMap,
                                   @NonNull final InputDataFile inputData,
                                   @NonNull final InputStringConverter converter,
-                                  @NonNull final Informer informer) {
+                                  @NonNull final CollectorInformer informer) {
         this.resultMap = resultMap;
         this.inputData = inputData;
         this.converter = converter;
@@ -40,26 +37,38 @@ public class CollectorServiceTwoMap implements CollectorService {
     }
 
     public void collectStrings() throws IOException {
-        val file = inputData.getData();
-        checkFile(file);
-
-        try (val br = new BufferedReader(new FileReader(inputData.getData().toFile()))) {
+        try (val br = new BufferedReader(new FileReader(checkAndGetFile()))) {
             while (br.ready()) {
-                final InputString inputString = converter.getModel(br.readLine());
+                final InputString inputString = parseInputString(br.readLine());
+                if (inputString == null) {
+                    continue;
+                }
                 informer.incStringsCounter();
                 final List<String> values = inputString.getValues();
                 final HashSet<Group> valuesOwners = getValuesOwners(values);
                 distributeString(valuesOwners, inputString);
             }
-        } catch (IOException e) {
-            throw new IOException(e.getCause());
         }
     }
 
-    private void checkFile(@NonNull final Path file) throws FileNotFoundException {
-        if (!FileUtils.fileIsValide(file)) {
-            throw new FileNotFoundException("Wrong file");
+    private InputString parseInputString(@NonNull final String string) {
+        final InputString inputString;
+        try {
+            inputString = converter.getModel(string);
+        } catch (IllegalArgumentException e) {
+            ConsoleUtils.log(e.getMessage() + " " + string);
+            informer.addInvalidString(string);
+            return null;
         }
+        return inputString;
+    }
+
+    private File checkAndGetFile() throws FileNotFoundException {
+        val pathToData = inputData.getPath();
+        if (!FileUtils.fileIsValid(pathToData)) {
+            throw new FileNotFoundException("Wrong input file name");
+        }
+        return pathToData.toFile();
     }
 
     private HashSet<Group> getValuesOwners(@NonNull final List<String> values) {

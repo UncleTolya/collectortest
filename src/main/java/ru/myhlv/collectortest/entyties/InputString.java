@@ -1,14 +1,16 @@
 package ru.myhlv.collectortest.entyties;
 
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 
 import java.util.List;
 
-@Data
+@EqualsAndHashCode
 @RequiredArgsConstructor(staticName = "of")
 public class InputString {
+    @Getter
     private final List<String> values;
 
     @Override
